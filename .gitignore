@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+.venv/
+reports/*.html
+reports/*.png
+.pytest_cache/
+.superpowers/
