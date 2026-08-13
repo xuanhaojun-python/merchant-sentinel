@@ -1,7 +1,7 @@
-base_url: "https://merchant-staging.example.com"
+base_url: "https://www1.sit.planckage.cc"
 credentials:
-  email: "test@merchant.com"
-  password: "TestPass123!"
+  email: "jimmy.xuan@leptage.com"
+  password: ""
 timeouts:
   default: 30000
   navigation: 60000

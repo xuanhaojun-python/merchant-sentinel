@@ -3,25 +3,26 @@ from pages.base_page import BasePage
 
 
 class DashboardPage(BasePage):
-    BALANCE_AMOUNT = "[class*='balance'] [class*='amount'], [data-testid='balance']"
-    STATS_CONTAINER = "[class*='stats'], [class*='statistic'], [class*='overview']"
-    TRANSACTION_CHART = "[class*='chart'], canvas, [class*='graph']"
-    RECENT_ORDERS = "[class*='recent'], [class*='order-list'], table"
+    WELCOME_HEADING = "h1"
+    BALANCE_CARD = "[class*=balance]"
+    DEPOSIT_BUTTON = "button:has-text('Deposit')"
+    CURRENCIES_SECTION = "text=All Currencies"
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
 
     def goto(self) -> None:
-        super().goto("/dashboard")
+        super().goto("/wallet/index")
+        self.page.wait_for_load_state("networkidle")
 
-    def get_balance_text(self) -> str:
-        return self.wait_for_element(self.BALANCE_AMOUNT).inner_text()
+    def is_welcome_visible(self) -> bool:
+        return self.page.locator(self.WELCOME_HEADING).first.is_visible()
 
-    def is_stats_visible(self) -> bool:
-        return self.page.locator(self.STATS_CONTAINER).is_visible()
+    def is_balance_card_visible(self) -> bool:
+        return self.page.locator(self.BALANCE_CARD).first.is_visible()
 
-    def is_chart_visible(self) -> bool:
-        return self.page.locator(self.TRANSACTION_CHART).is_visible()
+    def is_deposit_button_visible(self) -> bool:
+        return self.page.locator(self.DEPOSIT_BUTTON).first.is_visible()
 
-    def is_recent_orders_visible(self) -> bool:
-        return self.page.locator(self.RECENT_ORDERS).is_visible()
+    def is_currencies_section_visible(self) -> bool:
+        return self.page.locator(self.CURRENCIES_SECTION).first.is_visible()
