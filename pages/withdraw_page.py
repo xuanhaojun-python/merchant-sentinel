@@ -3,41 +3,44 @@ from pages.base_page import BasePage
 
 
 class WithdrawPage(BasePage):
-    AMOUNT_INPUT = "input[name*='amount'], input[placeholder*='金额'], input[placeholder*='amount']"
-    ADDRESS_INPUT = "input[name*='address'], input[placeholder*='地址'], input[placeholder*='address']"
-    SUBMIT_BUTTON = "button[type='submit'], button:has-text('提现'), button:has-text('Withdraw')"
-    CONFIRM_BUTTON = "button:has-text('确认'), button:has-text('Confirm')"
-    SUCCESS_MESSAGE = "[class*='success'], [class*='toast-success'], [role='alert']:has-text('成功')"
-    ERROR_MESSAGE = "[class*='error'], [class*='toast-error'], [role='alert']:has-text('错误')"
-    BALANCE_DISPLAY = "[class*='available'], [class*='balance']"
+    FIAT_TAB = "a[href='/withdraw/fiat']"
+    CRYPTO_TAB = "a[href='/withdraw/crypto']"
+    DIALOG = ".dialog-content"
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
 
     def goto(self) -> None:
-        super().goto("/withdraw")
+        # 直接进 fiat 子路由，确保 tab 高亮
+        super().goto("/withdraw/fiat")
+        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_timeout(1500)
+        self._close_dialog_if_present()
 
-    def get_available_balance(self) -> str:
-        return self.wait_for_element(self.BALANCE_DISPLAY).inner_text()
+    def _close_dialog_if_present(self) -> None:
+        dialog = self.page.locator(self.DIALOG).first
+        if dialog.is_visible(timeout=1000):
+            self.page.keyboard.press("Escape")
+            self.page.wait_for_timeout(500)
 
-    def fill_amount(self, amount: str) -> None:
-        self.wait_for_element(self.AMOUNT_INPUT).fill(amount)
+    def is_fiat_tab_active(self) -> bool:
+        return "/withdraw/fiat" in self.page.url
 
-    def fill_address(self, address: str) -> None:
-        self.wait_for_element(self.ADDRESS_INPUT).fill(address)
+    def is_crypto_tab_active(self) -> bool:
+        return "/withdraw/crypto" in self.page.url
 
-    def submit(self) -> None:
-        self.page.locator(self.SUBMIT_BUTTON).click()
+    def is_fiat_tab_visible(self) -> bool:
+        return self.page.locator(self.FIAT_TAB).first.is_visible()
 
-    def confirm(self) -> None:
-        self.page.locator(self.CONFIRM_BUTTON).click()
+    def is_crypto_tab_visible(self) -> bool:
+        return self.page.locator(self.CRYPTO_TAB).first.is_visible()
 
-    def get_success_message(self) -> str:
-        locator = self.page.locator(self.SUCCESS_MESSAGE)
-        locator.wait_for(state="visible", timeout=10000)
-        return locator.inner_text()
+    def click_crypto_tab(self) -> None:
+        self.page.locator(self.CRYPTO_TAB).first.click()
+        self.page.wait_for_url("**/withdraw/crypto")
+        self._close_dialog_if_present()
 
-    def get_error_message(self) -> str:
-        locator = self.page.locator(self.ERROR_MESSAGE)
-        locator.wait_for(state="visible", timeout=5000)
-        return locator.inner_text()
+    def click_fiat_tab(self) -> None:
+        self.page.locator(self.FIAT_TAB).first.click()
+        self.page.wait_for_url("**/withdraw/fiat")
+        self._close_dialog_if_present()

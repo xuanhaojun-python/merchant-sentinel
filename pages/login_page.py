@@ -25,12 +25,12 @@ class LoginPage(BasePage):
         cookie_btn = self.page.locator(self.ACCEPT_COOKIE)
         if cookie_btn.is_visible():
             cookie_btn.click()
-            self.page.wait_for_timeout(300)
         # 切换到密码登录模式
         switch = self.page.locator(self.SWITCH_TO_PASSWORD)
         switch.wait_for(state="visible", timeout=10000)
         switch.click()
-        self.page.wait_for_timeout(500)
+        # 等待密码输入框出现，替代固定 sleep
+        self.page.locator(self.PASSWORD_INPUT).wait_for(state="visible", timeout=5000)
 
     def fill_email(self, email: str) -> None:
         self.wait_for_element(self.EMAIL_INPUT).fill(email)

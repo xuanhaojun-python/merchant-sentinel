@@ -14,7 +14,6 @@ class TransactionPage(BasePage):
     def goto(self) -> None:
         super().goto("/transaction")
         self.page.wait_for_load_state("networkidle")
-        self.page.wait_for_timeout(1000)
 
     def is_page_loaded(self) -> bool:
         return self.page.locator(self.SEARCH_BUTTON).is_visible()
@@ -28,8 +27,6 @@ class TransactionPage(BasePage):
 
     def click_reset(self) -> None:
         self.page.locator(self.RESET_BUTTON).click()
-        self.page.wait_for_timeout(500)
 
     def click_export(self) -> None:
         self.page.locator(self.EXPORT_BUTTON).click()
-        self.page.wait_for_timeout(1000)
