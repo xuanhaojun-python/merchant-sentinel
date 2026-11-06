@@ -1,0 +1,5 @@
+# 复制为 config.local.yaml 并填写真实账号（config.local.yaml 不入库）
+# 也可以用环境变量 MS_EMAIL / MS_PASSWORD 代替
+credentials:
+  email: "jimmy.xuan@leptage.com"
+  password: "<your-password>"

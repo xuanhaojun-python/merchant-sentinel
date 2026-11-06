@@ -5,3 +5,9 @@ reports/*.html
 reports/*.png
 .pytest_cache/
 .superpowers/
+.DS_Store
+.idea/
+config/config.local.yaml
+.env
+reports/screenshots/
+reports/*.html

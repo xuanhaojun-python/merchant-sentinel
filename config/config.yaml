@@ -1,7 +1,7 @@
 base_url: "https://www1.sit.planckage.cc"
 credentials:
   email: "jimmy.xuan@leptage.com"
-  password: ""
+  password: ""  # 不要在此填写，使用 config.local.yaml 或环境变量 MS_PASSWORD
 timeouts:
   default: 30000
   navigation: 60000
