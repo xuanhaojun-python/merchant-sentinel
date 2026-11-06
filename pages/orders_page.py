@@ -1,33 +1,25 @@
-from playwright.sync_api import Page
-from pages.base_page import BasePage
+from playwright.sync_api import Locator
+from pages.transaction_page import TransactionPage
 
 
-class OrdersPage(BasePage):
-    ORDER_TABLE = "table.el-table__header"
-    ORDER_ROW = "table.el-table__body tbody tr"
-    SEARCH_BUTTON = "button:has-text('Search')"
-    RESET_BUTTON = "button:has-text('Reset')"
-    ORDER_DETAIL = "[class*='order-detail'], [class*='detail-panel']"
+class OrdersPage(TransactionPage):
+    """订单列表（当前与 Transaction 共用 /transaction 页面，待确认独立入口）
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
+    详情入口：每行 Action 列的「⋯」下拉菜单 → Detail，弹出详情 dialog。
+    """
 
-    def goto(self) -> None:
-        super().goto("/transaction")
-        self.page.wait_for_load_state("networkidle")
+    ROW_ACTION = ".el-dropdown [role='button']"
 
-    def wait_for_orders_loaded(self) -> None:
-        self.wait_for_element(self.ORDER_TABLE)
+    @property
+    def detail_dialog(self) -> Locator:
+        return self.page.get_by_role("dialog").filter(has_text="Transaction Amount")
 
-    def get_order_count(self) -> int:
-        return self.page.locator(self.ORDER_ROW).count()
+    def open_first_order_detail(self) -> None:
+        self.page.locator(self.TABLE_ROW).first.locator(self.ROW_ACTION).click()
+        self.page.locator("[role='menuitem']:visible", has_text="Detail").first.click()
 
-    def search(self, keyword: str) -> None:
-        self.page.locator(self.SEARCH_BUTTON).click()
-        self.page.wait_for_load_state("networkidle")
+    def detail_field(self, label: str) -> Locator:
+        return self.detail_dialog.get_by_text(label, exact=True).first
 
-    def click_first_order(self) -> None:
-        self.page.locator(self.ORDER_ROW).first.click()
-
-    def is_detail_visible(self) -> bool:
-        return self.page.locator(self.ORDER_DETAIL).first.is_visible()
+    def close_detail(self) -> None:
+        self.detail_dialog.locator(".el-dialog__headerbtn, [aria-label='Close'], [class*='close']").first.click()

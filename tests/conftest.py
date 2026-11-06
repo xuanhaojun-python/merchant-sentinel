@@ -1,5 +1,8 @@
+import base64
+import html as html_lib
+import os
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 from config.settings import settings
 from pages.login_page import LoginPage
 from datetime import datetime
@@ -9,6 +12,21 @@ from datetime import datetime
 class _Report:
     results = []
     start_time = None
+
+
+def _take_screenshot(item) -> str | None:
+    """失败时对当前 page 截图，返回 base64 字符串（用于内嵌报告），失败则返回 None。"""
+    page = item.funcargs.get("logged_in_page") or item.funcargs.get("fresh_page")
+    if page is None:
+        return None
+    try:
+        os.makedirs("reports/screenshots", exist_ok=True)
+        path = f"reports/screenshots/{item.name}.png"
+        page.screenshot(path=path, full_page=True)
+        with open(path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    except Exception:
+        return None
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -22,16 +40,21 @@ def pytest_runtest_makereport(item, call):
                 stdout = content.strip()
                 break
         steps = [line for line in stdout.splitlines() if line.strip().startswith("[")]
+        screenshot_b64 = _take_screenshot(item) if rep.failed else None
         _Report.results.append({
             "name": item.name,
             "outcome": rep.outcome,
             "duration": round(rep.duration, 2),
             "steps": steps,
             "error": str(rep.longrepr) if rep.failed else None,
+            "screenshot": screenshot_b64,
         })
 
 
 def pytest_sessionstart(session):
+    settings.require_credentials()
+    # expect 断言默认超时 5s，SIT 环境偏慢，统一使用配置的超时
+    expect.set_options(timeout=settings.timeout_default)
     _Report.start_time = datetime.now()
     _Report.results = []
 
@@ -40,18 +63,21 @@ def pytest_sessionfinish(session, exitstatus):
     results = _Report.results
     passed = sum(1 for r in results if r["outcome"] == "passed")
     failed = sum(1 for r in results if r["outcome"] == "failed")
+    skipped = sum(1 for r in results if r["outcome"] == "skipped")
     total_sec = sum(r["duration"] for r in results)
     run_time = _Report.start_time.strftime("%Y-%m-%d %H:%M:%S") if _Report.start_time else ""
 
     rows = ""
     for r in results:
-        color = "#2e7d32" if r["outcome"] == "passed" else "#c62828"
-        badge = "PASSED" if r["outcome"] == "passed" else "FAILED"
+        color = {"passed": "#2e7d32", "skipped": "#f9a825"}.get(r["outcome"], "#c62828")
+        badge = r["outcome"].upper()
         steps_html = "".join(
-            f'<div class="step">✅ {s}</div>' for s in r["steps"]
+            f'<div class="step">✅ {html_lib.escape(s)}</div>' for s in r["steps"]
         )
         if r["error"]:
-            steps_html += f'<div class="error"><pre>{r["error"]}</pre></div>'
+            steps_html += f'<div class="error"><pre>{html_lib.escape(r["error"])}</pre></div>'
+        if r.get("screenshot"):
+            steps_html += f'<div class="screenshot"><img src="data:image/png;base64,{r["screenshot"]}" alt="failure screenshot"></div>'
         rows += f"""
         <tr>
           <td><span class="badge" style="background:{color}">{badge}</span></td>
@@ -84,6 +110,8 @@ def pytest_sessionfinish(session, exitstatus):
   .step {{ padding: 3px 0; color: #37474f; font-size: 13px; }}
   .error {{ margin-top: 8px; }}
   .error pre {{ background: #fce4ec; color: #b71c1c; padding: 10px; border-radius: 4px; font-size: 12px; white-space: pre-wrap; word-break: break-all; }}
+  .screenshot {{ margin-top: 10px; }}
+  .screenshot img {{ max-width: 100%; border: 1px solid #e0e0e0; border-radius: 4px; cursor: pointer; }}
 </style>
 </head>
 <body>
@@ -94,16 +122,16 @@ def pytest_sessionfinish(session, exitstatus):
 <div class="summary">
   <div class="card passed"><div class="num">{passed}</div><div class="label">通过</div></div>
   <div class="card failed"><div class="num">{failed}</div><div class="label">失败</div></div>
+  <div class="card"><div class="num">{skipped}</div><div class="label">跳过</div></div>
   <div class="card"><div class="num">{len(results)}</div><div class="label">总计</div></div>
 </div>
 <table>
-  <thead><tr><th>结果</th><th>用例名称</th><th>耗时</th><th>检查步骤</th></tr></thead>
+  <thead><tr><th>结果</th><th>用例名称</th><th>耗时</th><th>检查步骤 / 失败截图</th></tr></thead>
   <tbody>{rows}</tbody>
 </table>
 </body>
 </html>"""
 
-    import os
     os.makedirs("reports", exist_ok=True)
     with open("reports/custom_report.html", "w", encoding="utf-8") as f:
         f.write(html)

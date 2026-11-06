@@ -36,14 +36,15 @@ merchant-sentinel/
 │
 ├── tests/
 │   ├── conftest.py          # Fixture 定义 + 自定义报告钩子
+│   ├── test_00_login.py
 │   ├── test_01_dashboard.py
 │   ├── test_02_deposit.py
 │   ├── test_03_treasury.py
 │   ├── test_04_withdraw.py
 │   ├── test_05_convert.py
 │   ├── test_06_transaction.py
-│   ├── test_07_orders.py
-│   └── test_08_setting.py
+│   ├── test_07_setting.py
+│   └── test_08_orders.py
 │
 ├── reports/                 # 报告输出（运行后自动生成）
 ├── pytest.ini
@@ -67,13 +68,27 @@ merchant-sentinel/
 
 ## 🔧 环境配置
 
-配置文件：`config/config.yaml`
+配置优先级：**环境变量 > `config/config.local.yaml`（不入库）> `config/config.yaml`**
+
+账号密码**不要**写进 `config.yaml`，二选一：
+
+```bash
+# 方式一：本地私有配置文件（已在 .gitignore 中忽略）
+cp config/config.local.yaml.example config/config.local.yaml   # 然后填写密码
+
+# 方式二：环境变量（适合 CI）
+export MS_EMAIL="jimmy.xuan@leptage.com"
+export MS_PASSWORD="..."
+export MS_HEADLESS=true   # 可选，无头模式
+```
+
+`config/config.yaml` 其余配置：
 
 ```yaml
 base_url: "https://..."
 credentials:
   email: "jimmy.xuan@leptage.com"
-  password: "..."
+  password: ""         # 留空，见上文
 timeouts:
   default: 10000       # ms，元素等待超时
   navigation: 30000    # ms，页面导航超时
@@ -107,23 +122,29 @@ pytest tests/test_04_withdraw.py -v
 
 ---
 
-## ✅ 测试用例（8 条冒烟用例）
+## ✅ 测试用例（12 条）
 
 页面访问顺序固定为：
-**Dashboard → Deposit → Treasury → Withdraw → Convert → Transaction → Orders → Setting**
+**Login → Dashboard → Deposit → Treasury → Withdraw → Convert → Transaction → Setting → Orders**
 
 | # | 页面 | 标记 | 检查项 |
 |---|---|---|---|
+| 00 | Login × 4 | `login` | 登录成功（`smoke`）/ 空表单校验 / 邮箱格式校验 / 错误密码提示 |
 | 01 | Wallet 首页 | `dashboard` | 欢迎标题 / 余额卡片 / Deposit 按钮 / All Currencies 区块 |
 | 02 | Deposit | `deposit` | 页面核心元素 × 4 |
 | 03 | Treasury | `treasury` | 页面核心元素 × 5 |
 | 04 | Withdraw | `withdraw` | Fiat & Crypto tab 可见 / 默认 Fiat 高亮 / tab 切换高亮 |
 | 05 | Convert | `convert` | 页面核心元素 × 5 |
 | 06 | Transaction | `transaction` | 页面核心元素 × 4 |
-| 07 | Orders | `orders` | 页面核心元素 × 3 |
-| 08 | Setting | `setting` | 页面核心元素 × 4 |
+| 07 | Setting | `setting` | 页面核心元素 × 4 |
+| 08 | Orders | `orders` | 列表加载 / Search / 打开订单详情并校验字段 / 关闭详情 |
 
-所有用例同时标记 `@pytest.mark.smoke`，可通过 `pytest -m smoke` 一键执行。
+除登录异常用例外，其余用例均标记 `@pytest.mark.smoke`，可通过 `pytest -m smoke` 一键执行。
+
+> 错误密码用例每次运行只尝试 1 次，避免触发账号锁定。
+
+**断言规范**：统一使用 Playwright `expect(locator).to_be_visible()`（自动重试，超时取 `timeouts.default`），
+不要使用 `locator.is_visible()` 做断言（它只检查调用瞬间的状态，容易误报）。
 
 ---
 
@@ -168,4 +189,5 @@ _browser  (scope=session)
 Fiat / Crypto 切换本质是 Vue Router 路由跳转（`<a href="/withdraw/fiat">`），并非普通 tab 组件。使用 `page.url` 是否包含对应路径判断激活状态，点击后等待 URL 变化而非等待 class 变化。
 
 **Dialog 处理**
-进入 Withdraw 页面时可能出现弹框，检测到后发送 `Escape` 键关闭，等待 500ms 让动画完成。
+- 进入 Withdraw 页面时可能出现弹框，检测到后发送 `Escape` 键关闭，并等待弹框隐藏。
+- 进入 Wallet 首页时可能出现 Compliance Declaration 弹窗，按 `aria-label` 精确定位后勾选并确认（页面上同时存在多个 `role=dialog`，不能用通用选择器）。

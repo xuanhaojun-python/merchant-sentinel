@@ -1,32 +1,22 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Locator
 from pages.base_page import BasePage
 
 
 class SettingPage(BasePage):
-    SECURITY_SECTION = "h2:has-text('Security')"
-    CHANGE_PASSWORD_BUTTON = "button:has-text('Change Password')"
-    TWO_FA_SECTION = "text=Two-Factor Authentication"
-    WHITELIST_SECTION = "text=Withdrawal whitelist"
-    ENABLE_WHITELIST_BUTTON = "button:has-text('Enable whitelist')"
+    PATH = "/setting"
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
+    @property
+    def change_password_button(self) -> Locator:
+        return self.page.locator("button:has-text('Change Password')").first
 
-    def goto(self) -> None:
-        super().goto("/setting")
-        self.page.wait_for_load_state("networkidle")
+    @property
+    def two_fa_section(self) -> Locator:
+        return self.page.locator("text=Two-Factor Authentication").first
 
-    def is_page_loaded(self) -> bool:
-        return self.page.locator(self.CHANGE_PASSWORD_BUTTON).is_visible()
+    @property
+    def whitelist_section(self) -> Locator:
+        return self.page.locator("text=Withdrawal whitelist").first
 
-    def is_change_password_visible(self) -> bool:
-        return self.page.locator(self.CHANGE_PASSWORD_BUTTON).is_visible()
-
-    def is_2fa_section_visible(self) -> bool:
-        return self.page.locator(self.TWO_FA_SECTION).is_visible()
-
-    def is_whitelist_section_visible(self) -> bool:
-        return self.page.locator(self.WHITELIST_SECTION).is_visible()
-
-    def is_enable_whitelist_visible(self) -> bool:
-        return self.page.locator(self.ENABLE_WHITELIST_BUTTON).is_visible()
+    @property
+    def enable_whitelist_button(self) -> Locator:
+        return self.page.locator("button:has-text('Enable whitelist')").first

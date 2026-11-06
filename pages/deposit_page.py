@@ -1,36 +1,30 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Locator
 from pages.base_page import BasePage
 
 
 class DepositPage(BasePage):
-    CRYPTO_TAB = "a:has-text('Crypto')"
-    FIAT_TAB = "a:has-text('Fiat')"
-    CURRENCY_SELECTOR = "text=Select Deposit Currency"
-    NETWORK_SELECTOR = "text=Confirm Network"
-    DEPOSIT_ADDRESS = "text=Deposit Address"
+    PATH = "/deposit/crypto"
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
+    @property
+    def crypto_tab(self) -> Locator:
+        return self.page.locator("a:has-text('Crypto')").first
 
-    def goto(self) -> None:
-        super().goto("/deposit/crypto")
-        self.page.wait_for_load_state("networkidle")
+    @property
+    def fiat_tab(self) -> Locator:
+        return self.page.locator("a:has-text('Fiat')").first
 
-    def is_crypto_tab_visible(self) -> bool:
-        return self.page.locator(self.CRYPTO_TAB).first.is_visible()
+    @property
+    def currency_selector(self) -> Locator:
+        return self.page.locator("text=Select Deposit Currency").first
 
-    def is_fiat_tab_visible(self) -> bool:
-        return self.page.locator(self.FIAT_TAB).first.is_visible()
+    @property
+    def network_selector(self) -> Locator:
+        return self.page.locator("text=Confirm Network").first
 
-    def is_currency_selector_visible(self) -> bool:
-        return self.page.locator(self.CURRENCY_SELECTOR).first.is_visible()
-
-    def is_network_selector_visible(self) -> bool:
-        return self.page.locator(self.NETWORK_SELECTOR).first.is_visible()
-
-    def is_deposit_address_visible(self) -> bool:
-        return self.page.locator(self.DEPOSIT_ADDRESS).first.is_visible()
+    @property
+    def deposit_address(self) -> Locator:
+        return self.page.locator("text=Deposit Address").first
 
     def click_fiat_tab(self) -> None:
-        self.page.locator(self.FIAT_TAB).first.click()
-        self.page.wait_for_load_state("networkidle")
+        self.fiat_tab.click()
+        self.page.wait_for_url("**/deposit/fiat**")

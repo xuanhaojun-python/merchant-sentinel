@@ -1,34 +1,32 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Locator
 from pages.base_page import BasePage
 
 
 class DashboardPage(BasePage):
-    WELCOME_HEADING = "h1"
-    BALANCE_CARD = "[class*=balance]"
-    DEPOSIT_BUTTON = "button:has-text('Deposit')"
-    CURRENCIES_SECTION = "text=All Currencies"
+    PATH = "/wallet/index"
     ACTION_DEPOSIT = ".btn-wrap button:has-text('Deposit')"
     ACTION_CONVERT = ".btn-wrap button:has-text('Convert')"
     ACTION_WITHDRAW = ".btn-wrap button:has-text('Withdraw')"
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
-
     def goto(self) -> None:
-        super().goto("/wallet/index")
-        self.page.wait_for_load_state("networkidle")
+        super().goto()
+        self.dismiss_dialog_if_present()
 
-    def is_welcome_visible(self) -> bool:
-        return self.page.locator(self.WELCOME_HEADING).first.is_visible()
+    @property
+    def welcome_heading(self) -> Locator:
+        return self.page.locator("h1").first
 
-    def is_balance_card_visible(self) -> bool:
-        return self.page.locator(self.BALANCE_CARD).first.is_visible()
+    @property
+    def balance_card(self) -> Locator:
+        return self.page.locator("[class*=balance]").first
 
-    def is_deposit_button_visible(self) -> bool:
-        return self.page.locator(self.DEPOSIT_BUTTON).first.is_visible()
+    @property
+    def deposit_button(self) -> Locator:
+        return self.page.locator("button:has-text('Deposit')").first
 
-    def is_currencies_section_visible(self) -> bool:
-        return self.page.locator(self.CURRENCIES_SECTION).first.is_visible()
+    @property
+    def currencies_section(self) -> Locator:
+        return self.page.locator("text=All Currencies").first
 
     def click_action_deposit(self) -> None:
         self.page.locator(self.ACTION_DEPOSIT).click()

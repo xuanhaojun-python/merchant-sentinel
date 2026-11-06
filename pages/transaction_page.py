@@ -1,32 +1,42 @@
-from playwright.sync_api import Page
+from playwright.sync_api import Locator, TimeoutError as PlaywrightTimeoutError
 from pages.base_page import BasePage
 
 
 class TransactionPage(BasePage):
-    SEARCH_BUTTON = "button:has-text('Search')"
-    RESET_BUTTON = "button:has-text('Reset')"
-    EXPORT_BUTTON = "button:has-text('Export')"
-    TABLE = "table.el-table__header"
+    PATH = "/transaction"
+    TABLE_ROW = "table.el-table__body tbody tr"
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
+    @property
+    def search_button(self) -> Locator:
+        return self.page.locator("button:has-text('Search')").first
 
-    def goto(self) -> None:
-        super().goto("/transaction")
-        self.page.wait_for_load_state("networkidle")
+    @property
+    def reset_button(self) -> Locator:
+        return self.page.locator("button:has-text('Reset')").first
 
-    def is_page_loaded(self) -> bool:
-        return self.page.locator(self.SEARCH_BUTTON).is_visible()
+    @property
+    def export_button(self) -> Locator:
+        return self.page.locator("button:has-text('Export')").first
 
-    def is_table_visible(self) -> bool:
-        return self.page.locator(self.TABLE).first.is_visible()
+    @property
+    def table(self) -> Locator:
+        return self.page.locator("table.el-table__header").first
+
+    def row_count(self, timeout: int = 10000) -> int:
+        """等待数据行渲染后返回行数；超时仍无数据行且显示"无数据"提示则返回 0。
+
+        注意：Search 后表格重新加载期间会短暂出现空状态，因此优先等待数据行，而不是二者取先。
+        """
+        rows = self.page.locator(self.TABLE_ROW)
+        try:
+            rows.first.wait_for(state="visible", timeout=timeout)
+        except PlaywrightTimeoutError:
+            self.page.locator(".el-table__empty-text").first.wait_for(state="visible")
+            return 0
+        return rows.count()
 
     def click_search(self) -> None:
-        self.page.locator(self.SEARCH_BUTTON).click()
-        self.page.wait_for_load_state("networkidle")
+        self.search_button.click()
 
     def click_reset(self) -> None:
-        self.page.locator(self.RESET_BUTTON).click()
-
-    def click_export(self) -> None:
-        self.page.locator(self.EXPORT_BUTTON).click()
+        self.reset_button.click()
