@@ -18,7 +18,7 @@ async def lifespan(_: FastAPI):
     yield
 
 
-app = FastAPI(title="Merchant Sentinel 测试平台", lifespan=lifespan)
+app = FastAPI(title="Web3Rec 测试平台", lifespan=lifespan)
 app.include_router(projects.router)
 app.include_router(cases.router)
 app.include_router(runs.router)

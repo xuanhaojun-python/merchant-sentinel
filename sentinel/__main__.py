@@ -5,7 +5,7 @@ from sentinel.backend import settings
 
 
 def main() -> None:
-    print(f"Merchant Sentinel 测试平台：http://localhost:{settings.PORT}")
+    print(f"Web3Rec 测试平台：http://localhost:{settings.PORT}")
     uvicorn.run("sentinel.backend.main:app", host=settings.HOST, port=settings.PORT)
 
 

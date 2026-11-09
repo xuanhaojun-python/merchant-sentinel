@@ -1,7 +1,7 @@
 <template>
   <el-container class="layout">
     <el-aside width="208px" class="aside">
-      <div class="logo">🛡️ Merchant Sentinel</div>
+      <div class="logo">🛡️ Web3Rec</div>
       <el-menu :default-active="activeMenu" router class="menu">
         <el-menu-item v-for="m in menus" :key="m.path" :index="m.path">
           <el-icon><component :is="m.icon" /></el-icon>

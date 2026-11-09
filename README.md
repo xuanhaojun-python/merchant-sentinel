@@ -53,7 +53,7 @@ merchant-sentinel/
 
 ---
 
-## 🖥️ 可视化测试平台（sentinel/）
+## 🖥️ Web3Rec 可视化测试平台（sentinel/）
 
 本机使用的 Web 平台：项目管理 → 同步用例 → 勾选执行 → 实时日志 → 查看报告（含失败截图）。
 平台只负责调度 pytest，`tests/` `pages/` 仍可脱离平台在命令行运行。设计文档：`docs/superpowers/specs/2026-11-09-test-platform-design.md`

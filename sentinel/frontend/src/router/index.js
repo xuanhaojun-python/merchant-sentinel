@@ -37,5 +37,5 @@ const routes = [
 ]
 
 const router = createRouter({ history: createWebHistory(), routes })
-router.afterEach((to) => { document.title = `${to.meta.title || ''} · Merchant Sentinel` })
+router.afterEach((to) => { document.title = `${to.meta.title || ''} · Web3Rec` })
 export default router
