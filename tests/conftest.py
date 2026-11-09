@@ -20,8 +20,10 @@ def _take_screenshot(item) -> str | None:
     if page is None:
         return None
     try:
-        os.makedirs("reports/screenshots", exist_ok=True)
-        path = f"reports/screenshots/{item.name}.png"
+        # 由测试平台执行时，截图写入本次执行的产物目录
+        shot_dir = os.path.join(os.getenv("MS_RUN_DIR", "reports"), "screenshots")
+        os.makedirs(shot_dir, exist_ok=True)
+        path = os.path.join(shot_dir, f"{item.name}.png")
         page.screenshot(path=path, full_page=True)
         with open(path, "rb") as f:
             return base64.b64encode(f.read()).decode()

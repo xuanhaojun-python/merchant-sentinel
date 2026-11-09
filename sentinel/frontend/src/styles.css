@@ -1,0 +1,7 @@
+html, body, #app { margin: 0; height: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif; background: #f5f7fa; color: #303133; }
+.page-card { margin-bottom: 16px; }
+.toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.toolbar .spacer { flex: 1; }
+.mono { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12px; }
+.muted { color: #909399; font-size: 12px; }

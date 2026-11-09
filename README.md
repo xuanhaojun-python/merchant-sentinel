@@ -53,6 +53,33 @@ merchant-sentinel/
 
 ---
 
+## 🖥️ 可视化测试平台（sentinel/）
+
+本机使用的 Web 平台：项目管理 → 同步用例 → 勾选执行 → 实时日志 → 查看报告（含失败截图）。
+平台只负责调度 pytest，`tests/` `pages/` 仍可脱离平台在命令行运行。设计文档：`docs/superpowers/specs/2026-11-09-test-platform-design.md`
+
+```bash
+pip install -r requirements.txt
+make install-frontend      # 首次：安装前端依赖（需 Node.js 18+）
+
+make run                   # 构建前端并启动 → http://localhost:8082
+make dev                   # 开发模式：后端 :8082 热重载 + 前端 :5173
+make test-platform         # 平台自身的后端测试（不连 SIT）
+```
+
+**首次使用**：项目管理 → 新建项目（工程目录填本仓库绝对路径）→ 环境配置新建 SIT（账号密码可留空，沿用 `config.local.yaml`）→ 用例管理 → 同步用例 → 勾选执行。
+
+| 菜单 | 状态 |
+|---|---|
+| 项目管理 / 用例管理 / 执行记录 / 报告管理 | ✅ 第 1 期 |
+| 套件管理 / 定时任务 / 通知列表 | 第 2 期 |
+| 元素管理 / 脚本录制 / 脚本列表 | 第 3 期 |
+| 数据看板 | 第 4 期 |
+
+运行数据（SQLite、日志、截图）保存在 `sentinel/data/`，不入库。
+
+---
+
 ## ⚙️ 技术栈
 
 | 组件 | 版本 |
