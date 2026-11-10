@@ -10,6 +10,8 @@ class WithdrawPage(BasePage):
     FIAT_TAB = "a[href='/withdraw/fiat']"
     CRYPTO_TAB = "a[href='/withdraw/crypto']"
     DIALOG = ".dialog-content"
+    AMOUNT_INPUT = "input[placeholder^='Min:']"
+    SUBMIT_BUTTON_NAME = "Withdraw Authentication"
 
     FIAT_URL = re.compile(r"/withdraw/fiat")
     CRYPTO_URL = re.compile(r"/withdraw/crypto")
@@ -45,3 +47,38 @@ class WithdrawPage(BasePage):
         self.fiat_tab.click()
         self.page.wait_for_url("**/withdraw/fiat")
         self._close_dialog_if_present()
+
+    # ── 下单表单 ──
+    @property
+    def amount_input(self) -> Locator:
+        return self.page.locator(self.AMOUNT_INPUT).first
+
+    @property
+    def submit_button(self) -> Locator:
+        """表单完整前为禁用状态；点击后弹出 Withdrawal Confirmation（含 2FA），不会直接下单。"""
+        return self.page.get_by_role("button", name=self.SUBMIT_BUTTON_NAME)
+
+    def select_first_beneficiary(self) -> None:
+        item = self.page.locator(".el-form-item", has_text="Beneficiary Account").first
+        item.locator(".el-select__wrapper").first.click()
+        self.page.locator(".el-select-dropdown__item:visible").first.click()
+
+    # ── Withdrawal Confirmation 弹窗 ──
+    @property
+    def confirm_dialog(self) -> Locator:
+        return self.page.get_by_role("dialog").filter(has_text="Withdrawal Confirmation")
+
+    @property
+    def two_fa_input(self) -> Locator:
+        return self.confirm_dialog.locator("input[placeholder*='Google Authenticator']").first
+
+    @property
+    def confirm_button(self) -> Locator:
+        return self.confirm_dialog.get_by_role("button", name="Confirm")
+
+    @property
+    def cancel_button(self) -> Locator:
+        return self.confirm_dialog.get_by_role("button", name="Cancel")
+
+    def field_error(self, scope: Locator | None = None) -> Locator:
+        return (scope or self.page).locator(".el-form-item__error:visible").first

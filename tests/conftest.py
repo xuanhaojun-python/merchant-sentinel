@@ -18,7 +18,8 @@ class _Report:
 
 def _take_screenshot(item) -> str | None:
     """失败时对当前 page 截图，返回 base64 字符串（用于内嵌报告），失败则返回 None。"""
-    page = item.funcargs.get("logged_in_page") or item.funcargs.get("fresh_page")
+    page = (item.funcargs.get("logged_in_page") or item.funcargs.get("own_session_page")
+            or item.funcargs.get("fresh_page"))
     if page is None:
         return None
     try:
@@ -151,25 +152,52 @@ def _browser():
         browser.close()
 
 
-@pytest.fixture(scope="session")
-def page(_browser):
-    """整个 session 只有一个 page，登录一次，所有用例复用"""
-    context = _browser.new_context()
-    pg = context.new_page()
-
+def _login(pg) -> None:
     login = LoginPage(pg)
     login.goto()
     login.login(settings.email, settings.password)
     login.wait_for_dashboard()
 
+
+class _SharedSession:
+    # 商户端 Logout 会让该账号的所有会话失效（2026-11-10 实测）。
+    # 会破坏会话的用例结束后置位，下一个使用共享 page 的用例先重新登录。
+    stale = False
+
+
+@pytest.fixture(scope="session")
+def page(_browser):
+    """整个 session 只有一个 page，登录一次，所有用例复用"""
+    context = _browser.new_context()
+    pg = context.new_page()
+    _login(pg)
     yield pg
     context.close()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def logged_in_page(page):
-    """已登录的 page，session 内所有用例共享"""
+    """已登录的 page，session 内所有用例共享；共享会话可能已被其他用例的退出登录作废时自动重登"""
+    if _SharedSession.stale:
+        page.context.clear_cookies()
+        _login(page)
+        _SharedSession.stale = False
     return page
+
+
+@pytest.fixture(scope="function")
+def own_session_page(_browser):
+    """独立登录的 page：用于退出登录、篡改 token 等会破坏会话的用例。
+
+    注意：Logout 会作废该账号的所有会话（包括共享 page，以及手工登录同一账号的人），
+    因此用例结束后标记共享会话需要重登。
+    """
+    context = _browser.new_context()
+    pg = context.new_page()
+    _login(pg)
+    yield pg
+    context.close()
+    _SharedSession.stale = True
 
 
 @pytest.fixture(scope="function")

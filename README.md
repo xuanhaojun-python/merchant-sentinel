@@ -229,6 +229,7 @@ Fiat / Crypto 切换本质是 Vue Router 路由跳转（`<a href="/withdraw/fiat
 | `fund` | 真实资金操作。**默认 skip**，设置 `MS_ALLOW_FUND=1`（平台上为环境的"资金用例"开关）才会执行；用例必须依赖 `fund_guard` fixture，并在下单前调用 `fund_guard.check_amount(...)`，单笔上限为 `fund.max_amount` |
 | `e2e` | 跨系统，依赖运营后台 proto（`proto` fixture） |
 | `creates_data` | 会在 SIT 留下数据 |
+| `security` | 会话与安全控制。⚠️ 其中的退出登录用例会让**该账号所有会话失效**，同一账号的人工 SIT 会话也会被踢下线；需要时用 `-m "not security"` 排除 |
 
 proto 与 2FA 的配置写在 `config/config.local.yaml`（参考 `config.local.yaml.example`），按需使用：
 

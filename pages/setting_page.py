@@ -20,3 +20,8 @@ class SettingPage(BasePage):
     @property
     def enable_whitelist_button(self) -> Locator:
         return self.page.locator("button:has-text('Enable whitelist')").first
+
+    @property
+    def disable_2fa_entry(self) -> Locator:
+        """账号已开启 2FA 时显示「Disable 2FA」入口（非 button 元素）"""
+        return self.page.get_by_text("Disable 2FA", exact=True).first
