@@ -2,9 +2,20 @@ base_url: "https://www1.sit.planckage.cc"
 credentials:
   email: "jimmy.xuan@leptage.com"
   password: ""  # 不要在此填写，使用 config.local.yaml 或环境变量 MS_PASSWORD
+  totp_secret: ""  # 不要在此填写，使用 config.local.yaml 或环境变量 MS_TOTP_SECRET
 timeouts:
   default: 30000
   navigation: 60000
 browser:
   headless: false
   slow_mo: 0
+proto:
+  base_url: "https://proto1.sit.planckage.cc"
+  sso_url: "https://sso1.dev.photontech.cc"
+  username: ""  # 使用 config.local.yaml 或环境变量 MS_PROTO_USERNAME
+  password: ""  # 使用 config.local.yaml 或环境变量 MS_PROTO_PASSWORD
+fund:
+  max_amount: "1"  # 资金类用例单笔金额上限；是否执行由环境变量 MS_ALLOW_FUND 控制
+test_data:
+  email_domain: "test.com"
+  email_prefix: "autotest"

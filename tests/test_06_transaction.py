@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.transaction_page import TransactionPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.transaction
 def test_transaction(logged_in_page):

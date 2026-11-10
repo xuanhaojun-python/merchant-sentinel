@@ -23,6 +23,9 @@
       <el-card>
         <div class="toolbar">
           <el-input v-model="filters.keyword" placeholder="搜索 nodeid / 描述 / 备注" clearable style="width: 240px" prefix-icon="Search" />
+          <el-select v-model="filters.priority" placeholder="优先级" clearable style="width: 110px">
+            <el-option v-for="p in PRIORITY_OPTIONS" :key="p" :label="p === NO_PRIORITY ? '未分级' : p.toUpperCase()" :value="p" />
+          </el-select>
           <el-select v-model="filters.marker" placeholder="标记" clearable style="width: 140px">
             <el-option v-for="m in markers" :key="m" :label="m" :value="m" />
           </el-select>
@@ -45,9 +48,19 @@
               <div class="muted mono">{{ row.file }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="标记" width="160">
+          <el-table-column label="优先级" width="80" align="center">
             <template #default="{ row }">
-              <el-tag v-for="m in row.markers" :key="m" size="small" effect="plain" class="tag">{{ m }}</el-tag>
+              <el-tag v-if="priorityOf(row) !== NO_PRIORITY" size="small" :type="PRIORITY_TYPE[priorityOf(row)]" effect="dark">
+                {{ priorityOf(row).toUpperCase() }}
+              </el-tag>
+              <el-tooltip v-else content="缺少 p0 / p1 / p2 标记，或标记了多个" placement="top">
+                <el-tag size="small" type="warning">未分级</el-tag>
+              </el-tooltip>
+            </template>
+          </el-table-column>
+          <el-table-column label="标记" width="180">
+            <template #default="{ row }">
+              <el-tag v-for="m in otherMarkers(row)" :key="m" size="small" :type="RISK_TYPE[m]" :effect="RISK_TYPE[m] ? 'dark' : 'plain'" class="tag">{{ m }}</el-tag>
               <el-tag v-for="t in row.tags" :key="'t' + t" size="small" type="warning" effect="plain" class="tag">{{ t }}</el-tag>
             </template>
           </el-table-column>
@@ -96,6 +109,13 @@ import { api } from '../api'
 import { useProjectStore } from '../stores/project'
 import StatusTag from '../components/StatusTag.vue'
 import RunDialog from '../components/RunDialog.vue'
+import { NO_PRIORITY, PRIORITIES, priorityOf } from '../utils'
+
+const PRIORITY_OPTIONS = [...PRIORITIES, NO_PRIORITY]
+const PRIORITY_TYPE = { p0: 'danger', p1: 'warning', p2: 'info' }
+// 风险类标记醒目显示：fund 真实动钱为红色，跨系统 / 造数据为橙色
+const RISK_TYPE = { fund: 'danger', e2e: 'warning', creates_data: 'warning' }
+const otherMarkers = (c) => c.markers.filter((m) => !PRIORITIES.includes(m))
 
 const store = useProjectStore()
 const cases = ref([])
@@ -104,7 +124,7 @@ const syncing = ref(false)
 const selected = ref([])
 const tableRef = ref()
 const runDialog = ref()
-const filters = reactive({ keyword: '', marker: '', status: 'active', file: '' })
+const filters = reactive({ keyword: '', priority: '', marker: '', status: 'active', file: '' })
 
 async function load() {
   if (!store.currentId) return
@@ -116,12 +136,13 @@ async function load() {
   }
 }
 
-const markers = computed(() => [...new Set(cases.value.flatMap((c) => c.markers))].sort())
+const markers = computed(() => [...new Set(cases.value.flatMap(otherMarkers))].sort())
 
 const filtered = computed(() => {
   const kw = filters.keyword.trim().toLowerCase()
   return cases.value.filter((c) =>
     (!filters.file || c.file === filters.file || c.file.startsWith(filters.file + '/')) &&
+    (!filters.priority || priorityOf(c) === filters.priority) &&
     (!filters.marker || c.markers.includes(filters.marker)) &&
     (!kw || [c.nodeid, c.docstring, c.remark].some((s) => (s || '').toLowerCase().includes(kw))))
 })

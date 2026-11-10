@@ -7,6 +7,8 @@ from config.settings import settings
 from pages.login_page import LoginPage
 from datetime import datetime
 
+pytest_plugins = ["utils.pytest_guards"]
+
 
 # ── 自定义报告数据收集 ────────────────────────────────────────────
 class _Report:

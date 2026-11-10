@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.withdraw_page import WithdrawPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.withdraw
 def test_withdraw(logged_in_page):

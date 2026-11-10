@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.dashboard_page import DashboardPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.dashboard
 def test_dashboard(logged_in_page):

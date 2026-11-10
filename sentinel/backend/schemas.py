@@ -32,6 +32,7 @@ class EnvironmentIn(BaseModel):
     password: str = ""
     headless: bool = True
     is_default: bool = False
+    allow_fund: bool = False
 
 
 class EnvironmentOut(ORM):
@@ -43,6 +44,7 @@ class EnvironmentOut(ORM):
     password: str
     headless: bool
     is_default: bool
+    allow_fund: bool
 
 
 # ── TestCase ──

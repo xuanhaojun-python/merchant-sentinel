@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.convert_page import ConvertPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.convert
 def test_convert(logged_in_page):

@@ -1,6 +1,6 @@
 PY ?= .venv/bin/python
 
-.PHONY: dev backend frontend build run test-platform install-frontend
+.PHONY: dev backend frontend build run test-platform test-unit install-frontend
 
 install-frontend:
 	cd sentinel/frontend && npm install
@@ -24,3 +24,7 @@ run: build
 
 test-platform:
 	$(PY) -m pytest sentinel/tests -p no:cacheprovider -q -o addopts=""
+
+# 执行层工具单元测试（不连接 SIT）
+test-unit:
+	$(PY) -m pytest unit_tests -p no:cacheprovider -q -o addopts=""

@@ -58,6 +58,11 @@
       <el-table-column prop="email" label="账号" min-width="160" show-overflow-tooltip />
       <el-table-column label="密码" width="80"><template #default="{ row }">{{ row.password ? '已配置' : '-' }}</template></el-table-column>
       <el-table-column label="无头" width="60"><template #default="{ row }">{{ row.headless ? '是' : '否' }}</template></el-table-column>
+      <el-table-column label="资金用例" width="90" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.allow_fund" size="small" type="danger" effect="dark">已开启</el-tag><span v-else class="muted">关闭</span>
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="110">
         <template #default="{ row }">
           <el-button link type="primary" @click="openEnv(row)">编辑</el-button>
@@ -75,8 +80,12 @@
       <el-form-item label="登录密码"><el-input v-model="envDialog.form.password" type="password" show-password /></el-form-item>
       <el-form-item label="无头模式"><el-switch v-model="envDialog.form.headless" /></el-form-item>
       <el-form-item label="默认环境"><el-switch v-model="envDialog.form.is_default" /></el-form-item>
+      <el-form-item label="资金用例">
+        <el-switch v-model="envDialog.form.allow_fund" active-color="#f56c6c" :before-change="confirmAllowFund" />
+        <span class="muted" style="margin-left: 8px">开启后 fund 标记的用例会真实下单</span>
+      </el-form-item>
       <el-alert type="info" :closable="false" show-icon
-        title="执行时通过 MS_BASE_URL / MS_EMAIL / MS_PASSWORD / MS_HEADLESS 环境变量注入；账号留空则使用工程自身配置。" />
+        title="执行时通过 MS_BASE_URL / MS_EMAIL / MS_PASSWORD / MS_HEADLESS / MS_ALLOW_FUND 环境变量注入；账号留空则使用工程自身配置。" />
     </el-form>
     <template #footer>
       <el-button @click="envDialog.visible = false">取消</el-button>
@@ -149,8 +158,21 @@ async function openEnvs(project) {
 }
 
 function openEnv(row) {
-  envDialog.form = row ? { ...row } : { name: '', base_url: '', email: '', password: '', headless: true, is_default: false }
+  envDialog.form = row ? { ...row } : { name: '', base_url: '', email: '', password: '', headless: true, is_default: false, allow_fund: false }
   envDialog.visible = true
+}
+
+// 打开资金开关需要二次确认；关闭无需确认
+async function confirmAllowFund() {
+  if (envDialog.form.allow_fund) return true
+  try {
+    await ElMessageBox.confirm(
+      '开启后，该环境执行带 fund 标记的用例时会真实提交 Convert / Withdraw / Treasury 等资金交易（单笔受 fund.max_amount 限制）。确定开启吗？',
+      '开启资金类用例', { type: 'warning', confirmButtonText: '确定开启', confirmButtonClass: 'el-button--danger' })
+    return true
+  } catch {
+    return false
+  }
 }
 
 async function saveEnv() {

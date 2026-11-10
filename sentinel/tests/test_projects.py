@@ -37,3 +37,23 @@ def test_environment_default_is_unique(client, project):
 
     assert client.delete(f"/api/environments/{second['id']}").status_code == 204
     assert len(client.get(f"/api/projects/{pid}/environments").json()) == 1
+
+
+def test_environment_allow_fund_defaults_false(client, project):
+    resp = client.post(f"/api/projects/{project['id']}/environments", json={"name": "E", "base_url": "https://x.test"})
+    assert resp.status_code == 201 and resp.json()["allow_fund"] is False
+
+
+def test_add_missing_columns_upgrades_old_db(tmp_path, monkeypatch):
+    from sqlalchemy import create_engine
+    from sentinel.backend import db
+
+    old = create_engine(f"sqlite:///{tmp_path / 'old.db'}")
+    with old.begin() as conn:
+        conn.exec_driver_sql("CREATE TABLE environment (id INTEGER PRIMARY KEY, name VARCHAR(50))")
+        conn.exec_driver_sql("INSERT INTO environment (id, name) VALUES (1, 'SIT')")
+    monkeypatch.setattr(db, "engine", old)
+    db._add_missing_columns()
+    db._add_missing_columns()  # 幂等
+    with old.connect() as conn:
+        assert conn.exec_driver_sql("SELECT allow_fund FROM environment WHERE id = 1").scalar() == 0

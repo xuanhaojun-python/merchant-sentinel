@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.setting_page import SettingPage
 
 
+@pytest.mark.p2
 @pytest.mark.smoke
 @pytest.mark.setting
 def test_setting(logged_in_page):

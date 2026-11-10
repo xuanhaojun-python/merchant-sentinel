@@ -3,3 +3,8 @@
 credentials:
   email: "jimmy.xuan@leptage.com"
   password: "<your-password>"
+  totp_secret: ""  # 商户账号 2FA 的 Base32 密钥（重新绑定 2FA 时获取）
+
+proto:
+  username: ""
+  password: ""

@@ -34,6 +34,21 @@ def get_db():
         db.close()
 
 
+# 没有迁移工具：新增列在这里登记，启动时对旧库补列。(表, 列, DDL)
+_ADDED_COLUMNS = [
+    ("environment", "allow_fund", "BOOLEAN NOT NULL DEFAULT 0"),
+]
+
+
+def _add_missing_columns() -> None:
+    with engine.begin() as conn:
+        for table, column, ddl in _ADDED_COLUMNS:
+            cols = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            if column not in cols:
+                conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
+
+
 def init_db() -> None:
     from sentinel.backend import models  # noqa: F401  注册模型
     Base.metadata.create_all(engine)
+    _add_missing_columns()

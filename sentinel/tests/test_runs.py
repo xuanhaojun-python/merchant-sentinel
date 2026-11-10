@@ -99,3 +99,31 @@ def test_delete_run(client, project, env):
     run = wait_run(client, _run(client, project, env, ["test_pass"])["id"])
     assert client.delete(f"/api/runs/{run['id']}").status_code == 204
     assert client.get(f"/api/runs/{run['id']}").status_code == 404
+
+
+_PROBE = '''import os
+
+
+def test_probe():
+    print("[Probe] MS_ALLOW_FUND=" + os.environ.get("MS_ALLOW_FUND", "<unset>"))
+'''
+
+
+def _probe_value(client, project, env, sample_dir):
+    (sample_dir / "tests" / "test_probe.py").write_text(_PROBE, encoding="utf-8")
+    resp = client.post("/api/runs", json={"project_id": project["id"], "environment_id": env["id"],
+                                          "nodeids": ["tests/test_probe.py::test_probe"]})
+    run = wait_run(client, resp.json()["id"])
+    assert run["status"] == "passed", run
+    return run["results"][0]["steps"][0].split("=", 1)[1]
+
+
+def test_allow_fund_injected(client, project, env, sample_dir, monkeypatch):
+    # 后端进程自身带着 MS_ALLOW_FUND=1，也不能泄漏给未开启的环境
+    monkeypatch.setenv("MS_ALLOW_FUND", "1")
+    assert _probe_value(client, project, env, sample_dir) == "0"
+
+    body = {k: env[k] for k in ("name", "base_url", "email", "password", "headless", "is_default")}
+    resp = client.put(f"/api/environments/{env['id']}", json={**body, "allow_fund": True})
+    assert resp.status_code == 200 and resp.json()["allow_fund"] is True
+    assert _probe_value(client, project, env, sample_dir) == "1"

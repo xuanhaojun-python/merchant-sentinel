@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.deposit_page import DepositPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.deposit
 def test_deposit(logged_in_page):

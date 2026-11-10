@@ -1,7 +1,7 @@
 # 商户端业务场景覆盖 — 总体规划 + 子项目 A（测试基础设施）设计
 
 - 日期：2026-11-10
-- 状态：待评审
+- 状态：已实现（子项目 A）
 - 范围：第 1 部分是 Leptage 商户端业务场景覆盖的总体规划（拆分子项目）；第 2 部分是子项目 A 的详细设计
 - 前置文档：`2026-11-09-test-platform-design.md`（Web3Rec 平台第 1 期）
 
@@ -135,7 +135,7 @@ test_data:
 | `proto.password` | `MS_PROTO_PASSWORD` |
 | — | `MS_ALLOW_FUND`（只用环境变量，不进配置文件） |
 
-`Settings` 新增：`totp_secret`、`proto_base_url`、`proto_sso_url`、`proto_username`、`proto_password`、`fund_max_amount: Decimal`、`allow_fund: bool`、`email_domain`、`email_prefix`，以及：
+`Settings` 新增：`totp_secret`、`proto_base_url`、`proto_sso_url`、`proto_username`、`proto_password`、`fund_max_amount: Decimal`、`email_domain`、`email_prefix`（`MS_ALLOW_FUND` 由插件在运行时直接读取环境变量，不放进 Settings，避免出现两个来源），以及：
 
 - `require_totp()`：未配置时抛出 `RuntimeError`，提示配置方法
 - `require_proto()`：同上
@@ -152,15 +152,18 @@ test_data:
 
 | 方法 | 行为 |
 |---|---|
-| `login()` | `POST {sso_url}/api/user/login`，`code != 0` 时抛出 `ProtoAuthError`（信息里不含密码）。缓存 token 及其过期时间 |
-| `_request(method, path, json)` | 未登录或 token 即将过期（剩余 < 5 分钟）时先登录；返回 401 或业务码表示未授权时**重新登录一次**并重试，仍失败则抛错 |
+| `login()` | 走 OAuth2 授权码流程（见下方"实现时验证结果"），拿到 cookie `proto-token` 和当前用户 `userId`；任意一步失败都抛出 `ProtoAuthError`（信息里不含密码） |
+| `_call(method, path, json)` | 尚未登录时先登录；HTTP 401 时**重新登录一次**并重试，仍失败则抛错；业务码不是 `0000` 时抛出 `ProtoError`。proto-token 的有效期未知，所以不按过期时间主动刷新，只在 401 时重登 |
 | `query_events(topic, start_ms, end_ms, page=1, limit=50) -> list[dict]` | `POST /proto/ec/queryHistory` |
-| `get_event(event_id) -> dict` | `POST /proto/ec/queryHistory {eventId}`，返回解析后的 payload |
 | `wait_for_email_code(to, since_ms, timeout=120, interval=3) -> str` | 轮询 `chnl_email` 事件，时间窗口为 `[since_ms - 5s, now]`；按 `dataModel.to == to`（忽略大小写）匹配，取最新一条的 `dataModel.code`；超时抛出 `TimeoutError`，信息中包含邮箱和已等待的时长 |
 
-**实现时首先要验证的事项：** proto 接口如何携带认证信息（`Authorization: Bearer <token>` Header，还是 SSO 回跳后设置的 Cookie），以及列表接口是否直接返回 payload，还是要再调一次详情接口。
-- 如果是 Header 或 Cookie 能通过 API 获取：按上表实现。
-- 如果必须走浏览器的 SSO 回跳：备选方案是在 `login()` 中用 Playwright 无头登录一次，把 cookie 交给 httpx。这只影响 `login()` 内部，接口不变。
+**实现时验证结果（2026-11-10）：** 纯 httpx 即可完成登录，不需要浏览器。
+1. `GET {proto}/redirect/proto/oauth2/authorization/sso?redirectUrl=…` 返回 302 到 SSO，location 里带 `state`
+2. `POST {sso}/api/user/login {username, password, type: "account"}` 返回 `access_token`
+3. `GET {sso}/api/oauth/authorize?<第 1 步 location 的 query>`，带 `Authorization: Bearer <access_token>`，返回 `data.redirect_uri`
+4. `GET data.redirect_uri`，proto 写入 cookie `proto-token`
+
+proto 业务接口必须带 header `x-pd-uri: api`（否则 nginx 返回 405），并且要带 `x-lp-user-id`（取自 `GET /proto/ops/user`），否则查询结果为空。成功响应的格式是 `{code: "0000", data}`。列表接口的 `records[].detail.payload.dataModel` 里直接就有 `to` / `code`，不需要再调详情接口。**事件中心只保留最近约 1 小时的事件。** QA 账号的角色包括 Compliance、CSOps、marketing、Finance、Finance Leader、Risk。
 
 #### `utils/otp.py`
 
@@ -181,6 +184,8 @@ test_data:
 | fixture | 作用域 | 说明 |
 |---|---|---|
 | `proto` | session | 调用 `settings.require_proto()` 后返回 `ProtoClient`，首次请求时登录 |
+
+上述钩子和 fixture 实现在插件 `utils/pytest_guards.py` 中，由 `tests/conftest.py` 通过 `pytest_plugins` 加载，便于用 pytester 单独测试。
 | `totp` | session | 调用 `settings.require_totp()` 后返回 `lambda: current_code(settings.totp_secret)` |
 | `fund_guard` | function | 见 2.2 |
 

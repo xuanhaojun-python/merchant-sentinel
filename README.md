@@ -218,3 +218,21 @@ Fiat / Crypto 切换本质是 Vue Router 路由跳转（`<a href="/withdraw/fiat
 **Dialog 处理**
 - 进入 Withdraw 页面时可能出现弹框，检测到后发送 `Escape` 键关闭，并等待弹框隐藏。
 - 进入 Wallet 首页时可能出现 Compliance Declaration 弹窗，按 `aria-label` 精确定位后勾选并确认（页面上同时存在多个 `role=dialog`，不能用通用选择器）。
+
+---
+
+## 🏷️ 用例标记与资金保护
+
+| 标记 | 含义 |
+|---|---|
+| `p0` / `p1` / `p2` | 优先级，**每条用例必须有且只有一个**（缺失或重复会在收集阶段给出警告，平台显示为"未分级"） |
+| `fund` | 真实资金操作。**默认 skip**，设置 `MS_ALLOW_FUND=1`（平台上为环境的"资金用例"开关）才会执行；用例必须依赖 `fund_guard` fixture，并在下单前调用 `fund_guard.check_amount(...)`，单笔上限为 `fund.max_amount` |
+| `e2e` | 跨系统，依赖运营后台 proto（`proto` fixture） |
+| `creates_data` | 会在 SIT 留下数据 |
+
+proto 与 2FA 的配置写在 `config/config.local.yaml`（参考 `config.local.yaml.example`），按需使用：
+
+- `proto` fixture：`ProtoClient`，例如 `proto.wait_for_email_code(email, since_ms)` 获取注册邮箱验证码
+- `totp` fixture：`totp()` 返回当前的 2FA 验证码（需要 `credentials.totp_secret`）
+
+执行层工具的单元测试（不连接 SIT）：`make test-unit`

@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.treasury_page import TreasuryPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.treasury
 def test_treasury(logged_in_page):

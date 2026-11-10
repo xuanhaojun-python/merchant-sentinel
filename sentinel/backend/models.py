@@ -33,6 +33,8 @@ class Environment(Base):
     password: Mapped[str] = mapped_column(String(200), default="")
     headless: Mapped[bool] = mapped_column(Boolean, default=True)
     is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    # 允许执行 fund（真实资金）用例：执行时注入 MS_ALLOW_FUND
+    allow_fund: Mapped[bool] = mapped_column(Boolean, default=False)
 
     project: Mapped[Project] = relationship(back_populates="environments")
 

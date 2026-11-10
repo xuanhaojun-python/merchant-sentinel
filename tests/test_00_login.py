@@ -14,6 +14,7 @@ def login_page(fresh_page):
     return lp
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.login
 def test_login_success(login_page):
@@ -25,6 +26,7 @@ def test_login_success(login_page):
     expect(login_page.page).not_to_have_url(LoginPage.PATH_PATTERN)
 
 
+@pytest.mark.p0
 @pytest.mark.login
 def test_login_empty_fields(login_page):
     print("\n[Login] 不填写任何内容直接提交")
@@ -40,6 +42,7 @@ def test_login_empty_fields(login_page):
     expect(login_page.page).to_have_url(LoginPage.PATH_PATTERN)
 
 
+@pytest.mark.p0
 @pytest.mark.login
 def test_login_invalid_email_format(login_page):
     print("\n[Login] 输入非法邮箱格式并提交")
@@ -52,6 +55,7 @@ def test_login_invalid_email_format(login_page):
     expect(login_page.page).to_have_url(LoginPage.PATH_PATTERN)
 
 
+@pytest.mark.p0
 @pytest.mark.login
 def test_login_wrong_password(login_page):
     print("\n[Login] 输入正确邮箱 + 错误密码并提交")

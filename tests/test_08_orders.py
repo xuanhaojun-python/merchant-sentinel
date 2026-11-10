@@ -3,6 +3,7 @@ from playwright.sync_api import expect
 from pages.orders_page import OrdersPage
 
 
+@pytest.mark.p0
 @pytest.mark.smoke
 @pytest.mark.orders
 def test_orders(logged_in_page):

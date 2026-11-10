@@ -113,7 +113,8 @@ class Runner:
             if run is None or run.status != "queued":
                 return
             env = db.get(Environment, run.environment_id) if run.environment_id else None
-            extra = {"MS_RUN_DIR": str(rdir)}
+            # 资金开关总是显式设置，不继承后端进程的环境变量
+            extra = {"MS_RUN_DIR": str(rdir), "MS_ALLOW_FUND": "1" if env and env.allow_fund else "0"}
             if env:
                 extra.update({"MS_BASE_URL": env.base_url, "MS_HEADLESS": "true" if env.headless else "false"})
                 if env.email:
