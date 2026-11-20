@@ -9,10 +9,14 @@ FRONTEND_DIST = PACKAGE_DIR / "frontend" / "dist"
 HOST = os.getenv("SENTINEL_HOST", "127.0.0.1")
 PORT = int(os.getenv("SENTINEL_PORT", "8082"))
 STOP_GRACE_SECONDS = 5
+SCRIPTS_DIR = DATA_DIR / "scripts"
+# 通知里的报告链接前缀
+PUBLIC_URL = os.getenv("SENTINEL_PUBLIC_URL", f"http://localhost:{PORT}").rstrip("/")
 
 
 def ensure_dirs() -> None:
     RUNS_DIR.mkdir(parents=True, exist_ok=True)
+    SCRIPTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def run_dir(run_id: int) -> Path:

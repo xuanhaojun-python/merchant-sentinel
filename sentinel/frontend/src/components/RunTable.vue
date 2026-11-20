@@ -1,9 +1,13 @@
 <template>
   <div>
     <div class="toolbar">
+      <el-select v-model="trigger" placeholder="来源" clearable style="width: 110px" @change="reload">
+        <el-option v-for="(label, value) in TRIGGER_TEXT" :key="value" :label="label" :value="value" />
+      </el-select>
       <el-select v-if="!finishedOnly" v-model="status" placeholder="状态" clearable style="width: 130px" @change="reload">
         <el-option v-for="s in statuses" :key="s.value" :label="s.label" :value="s.value" />
       </el-select>
+      <el-tag v-if="suiteId" closable @close="$router.replace({ query: {} })">仅看套件 #{{ suiteId }}</el-tag>
       <div class="spacer" />
       <el-switch v-model="auto" active-text="自动刷新" />
       <el-button icon="Refresh" @click="load">刷新</el-button>
@@ -29,7 +33,12 @@
         </template>
       </el-table-column>
       <el-table-column prop="environment_name" label="环境" width="90"><template #default="{ row }">{{ row.environment_name || '-' }}</template></el-table-column>
-      <el-table-column label="触发" width="80"><template #default="{ row }">{{ row.trigger === 'manual' ? '手动' : '定时' }}</template></el-table-column>
+      <el-table-column label="来源" min-width="150">
+        <template #default="{ row }">
+          <el-tag size="small" :type="TRIGGER_TYPE[row.trigger]" effect="plain">{{ TRIGGER_TEXT[row.trigger] || row.trigger }}</el-tag>
+          <span v-if="row.title" class="muted" style="margin-left: 6px">{{ row.title }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="耗时" width="90"><template #default="{ row }">{{ row.duration ? row.duration.toFixed(1) + 's' : '-' }}</template></el-table-column>
       <el-table-column label="创建时间" min-width="160"><template #default="{ row }">{{ fmt(row.created_at) }}</template></el-table-column>
       <el-table-column label="操作" width="120" fixed="right">
@@ -50,9 +59,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../api'
 import { useProjectStore } from '../stores/project'
 import StatusTag from './StatusTag.vue'
-import { fmt } from '../utils'
+import { fmt, TRIGGER_TEXT } from '../utils'
 
-const props = defineProps({ finishedOnly: Boolean, linkPrefix: { type: String, default: '/runs' } })
+const TRIGGER_TYPE = { manual: 'info', suite: 'primary', schedule: 'warning', script: 'success' }
+
+const props = defineProps({ finishedOnly: Boolean, linkPrefix: { type: String, default: '/runs' }, suiteId: Number })
 const store = useProjectStore()
 const statuses = [
   { value: 'queued', label: '排队中' }, { value: 'running', label: '执行中' }, { value: 'passed', label: '通过' },
@@ -64,6 +75,7 @@ const total = ref(0)
 const page = ref(1)
 const pageSize = 20
 const status = ref('')
+const trigger = ref('')
 const loading = ref(false)
 const auto = ref(true)
 let timer
@@ -72,7 +84,8 @@ async function load(silent = false) {
   if (!store.currentId) return
   if (silent !== true) loading.value = true
   try {
-    const params = { project_id: store.currentId, page: page.value, page_size: pageSize, status: status.value || undefined }
+    const params = { project_id: store.currentId, page: page.value, page_size: pageSize, status: status.value || undefined,
+      trigger: trigger.value || undefined, suite_id: props.suiteId || undefined }
     if (props.finishedOnly) params.finished = true
     const r = await api.listRuns(params)
     items.value = r.items

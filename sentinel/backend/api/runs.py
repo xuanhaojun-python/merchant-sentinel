@@ -8,9 +8,10 @@ from sqlalchemy.orm import Session
 from sentinel.backend import settings
 from sentinel.backend.api.projects import get_project
 from sentinel.backend.db import SessionLocal, get_db
-from sentinel.backend.models import FINISHED_STATUSES, Environment, Run
+from sentinel.backend.models import FINISHED_STATUSES, Run
 from sentinel.backend.schemas import Page, RunCreate, RunDetail, RunOut
 from sentinel.backend.services.runner import runner
+from sentinel.backend.services.runs import enqueue_run, resolve_env
 
 router = APIRouter(tags=["runs"])
 
@@ -25,27 +26,23 @@ def _get_run(db: Session, run_id: int) -> Run:
 @router.post("/api/runs", response_model=RunOut, status_code=201)
 def create_run(body: RunCreate, db: Session = Depends(get_db)):
     get_project(db, body.project_id)
-    env = None
-    if body.environment_id is not None:
-        env = db.get(Environment, body.environment_id)
-        if env is None or env.project_id != body.project_id:
-            raise HTTPException(400, "环境不存在或不属于该项目")
-    run = Run(project_id=body.project_id, environment_id=env.id if env else None,
-              environment_name=env.name if env else "", selected_nodeids=body.nodeids, status="queued")
-    db.add(run)
-    db.commit()
-    runner.submit(run.id)
-    return run
+    env = resolve_env(db, body.project_id, body.environment_id)
+    return enqueue_run(db, body.project_id, env, body.nodeids)
 
 
 @router.get("/api/runs", response_model=Page)
 def list_runs(project_id: int | None = None, status: str | None = None, finished: bool | None = None,
+              trigger: str | None = None, suite_id: int | None = None,
               page: int = 1, page_size: int = 20, db: Session = Depends(get_db)):
     q = db.query(Run)
     if project_id:
         q = q.filter(Run.project_id == project_id)
     if status:
         q = q.filter(Run.status == status)
+    if trigger:
+        q = q.filter(Run.trigger == trigger)
+    if suite_id:
+        q = q.filter(Run.suite_id == suite_id)
     if finished is not None:
         q = q.filter(Run.status.in_(FINISHED_STATUSES) if finished else Run.status.notin_(FINISHED_STATUSES))
     total = q.count()

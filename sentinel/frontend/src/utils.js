@@ -10,3 +10,6 @@ export function priorityOf(c) {
   const found = PRIORITIES.filter((p) => (c.markers || []).includes(p))
   return found.length === 1 ? found[0] : NO_PRIORITY
 }
+
+export const TRIGGER_TEXT = { manual: '手动', suite: '套件', schedule: '定时', script: '脚本' }
+export const CHANNEL_TYPES = { feishu: '飞书', wecom: '企业微信', dingtalk: '钉钉', webhook: '通用 Webhook' }

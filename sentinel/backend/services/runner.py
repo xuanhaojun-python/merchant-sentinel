@@ -24,6 +24,8 @@ class Runner:
         self._proc: subprocess.Popen | None = None
         self._stop_requested: set[int] = set()
         self._thread: threading.Thread | None = None
+        # 执行结束回调（如通知），参数为 run_id；异常不影响执行器
+        self.listeners: list = []
 
     # ── 生命周期 ──
     def start(self) -> None:
@@ -171,6 +173,14 @@ class Runner:
             else:
                 run.status = "passed" if exit_code == 0 and run.failed == 0 else "failed"
             db.commit()
+        self._emit(run_id)
+
+    def _emit(self, run_id: int) -> None:
+        for cb in self.listeners:
+            try:
+                cb(run_id)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[runner] 结束回调异常 run={run_id}: {exc}")
 
 
 runner = Runner()

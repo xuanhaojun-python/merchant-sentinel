@@ -37,6 +37,9 @@ def get_db():
 # 没有迁移工具：新增列在这里登记，启动时对旧库补列。(表, 列, DDL)
 _ADDED_COLUMNS = [
     ("environment", "allow_fund", "BOOLEAN NOT NULL DEFAULT 0"),
+    ("run", "suite_id", "INTEGER"),
+    ("run", "schedule_id", "INTEGER"),
+    ("run", "title", "VARCHAR(200) NOT NULL DEFAULT ''"),
 ]
 
 
@@ -44,7 +47,7 @@ def _add_missing_columns() -> None:
     with engine.begin() as conn:
         for table, column, ddl in _ADDED_COLUMNS:
             cols = {row[1] for row in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
-            if column not in cols:
+            if cols and column not in cols:  # 表不存在（cols 为空）时由 create_all 负责建表
                 conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {column} {ddl}")
 
 

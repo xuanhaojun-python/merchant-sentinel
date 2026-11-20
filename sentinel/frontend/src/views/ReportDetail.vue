@@ -6,8 +6,10 @@
         <span class="run-title">测试报告 #{{ run.id }}</span>
         <StatusTag :status="run.status" effect="dark" />
         <span class="muted">环境：{{ run.environment_name || '工程默认配置' }}</span>
+        <span v-if="run.title" class="muted">{{ TRIGGER_TEXT[run.trigger] }}：{{ run.title }}</span>
         <span class="muted">执行时间：{{ fmt(run.started_at || run.created_at) }}</span>
         <div class="spacer" />
+        <el-button icon="Bell" @click="openNotify">发送通知</el-button>
         <el-button icon="Document" @click="$router.push(`/runs/${run.id}`)">查看日志</el-button>
       </div>
       <el-alert v-if="run.message" :title="run.message" type="warning" show-icon :closable="false" style="margin-top: 12px" />
@@ -38,16 +40,28 @@
       </template>
       <ResultTable :key="filter" :results="shown" :run-id="run.id" :expand-all="filter === 'failed'" />
     </el-card>
+
+    <el-dialog v-model="notify.visible" title="发送报告通知" width="440px">
+      <el-select v-model="notify.ids" multiple placeholder="选择通知渠道" style="width: 100%">
+        <el-option v-for="c in notify.channels" :key="c.id" :label="c.name" :value="c.id" :disabled="!c.enabled" />
+      </el-select>
+      <div v-if="!notify.channels.length" class="muted" style="margin-top: 8px">还没有通知渠道，请先到「通知列表」添加</div>
+      <template #footer>
+        <el-button @click="notify.visible = false">取消</el-button>
+        <el-button type="primary" :disabled="!notify.ids.length" :loading="notify.sending" @click="sendNotify">发送</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { api } from '../api'
 import StatusTag from '../components/StatusTag.vue'
 import ResultTable from '../components/ResultTable.vue'
-import { fmt } from '../utils'
+import { fmt, TRIGGER_TEXT } from '../utils'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const run = ref(null)
@@ -66,6 +80,24 @@ const shown = computed(() => {
   if (filter.value === 'failed') return run.value.results.filter((r) => ['failed', 'error'].includes(r.outcome))
   return run.value.results.filter((r) => r.outcome === filter.value)
 })
+
+const notify = reactive({ visible: false, sending: false, ids: [], channels: [] })
+async function openNotify() {
+  notify.channels = await api.listChannels()
+  notify.ids = []
+  notify.visible = true
+}
+async function sendNotify() {
+  notify.sending = true
+  try {
+    const res = await api.notifyRun(run.value.id, notify.ids)
+    const failed = res.filter((n) => n.status !== 'success')
+    failed.length ? ElMessage.error(`${failed.length} 个渠道发送失败，详见「通知列表」`) : ElMessage.success('通知已发送')
+    notify.visible = false
+  } finally {
+    notify.sending = false
+  }
+}
 
 onMounted(async () => {
   run.value = await api.getRun(Number(route.params.id))
