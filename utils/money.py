@@ -1,6 +1,6 @@
 """金额解析与比较。所有金额计算统一使用 Decimal，禁止 float。"""
 import re
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal, InvalidOperation
 
 # 例："2,001.553656 USDT"、"+ 0.030000 USDT"、"- 2.000000 USDT"、"1.0 USD"、"100,000.00"
 _AMOUNT_RE = re.compile(r"^\s*([+-]?)\s*([\d,]+(?:\.\d+)?)\s*([A-Za-z]{2,10})?\s*$")
@@ -33,3 +33,12 @@ def assert_amount(actual: Decimal, expected: Decimal, places: int) -> None:
         raise TypeError("assert_amount 只接受 Decimal，避免 float 精度问题")
     a, e = quantize(actual, places), quantize(expected, places)
     assert a == e, f"金额不一致：实际 {a}，期望 {e}，差值 {a - e}（精度 {places} 位）"
+
+
+def round_down(value: Decimal, places: int) -> Decimal:
+    """向零截断到 places 位（Convert 买入金额的展示规则：10 × 0.987911 = 9.879 → 9.87）。"""
+    return value.quantize(Decimal(1).scaleb(-places), rounding=ROUND_DOWN)
+
+
+def round_half_up(value: Decimal, places: int) -> Decimal:
+    return value.quantize(Decimal(1).scaleb(-places), rounding=ROUND_HALF_UP)

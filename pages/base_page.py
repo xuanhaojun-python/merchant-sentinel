@@ -5,6 +5,21 @@ from config.settings import settings
 class BasePage:
     PATH = ""
 
+    # ── Element Plus 通用组件 ──
+    DROPDOWN_ITEM = ".el-select-dropdown__item:visible"
+    SELECT_BOX = ".el-select"
+    SELECT_TRIGGER = ".el-select__wrapper"
+    FIELD_ERROR_VISIBLE = ".el-form-item__error:visible"
+    DROPDOWN_MENU = ".el-dropdown-menu:visible"
+    POPPER_VISIBLE = ".el-popper:visible"
+    TABLE_HEADER = "table.el-table__header"
+    TABLE_BODY_ROW = ".el-table__body tbody tr"
+    TABLE_BODY_ROW_VISIBLE = ".el-table__body tbody tr:visible"
+    TABLE_EMPTY = ".el-table__empty-text"
+    TABLE_LOADING = ".el-table .el-loading-mask"
+    PAGINATION = ".el-pagination"
+    FORM_ITEM = ".el-form-item"
+
     def __init__(self, page: Page) -> None:
         self.page = page
         self.base_url = settings.base_url

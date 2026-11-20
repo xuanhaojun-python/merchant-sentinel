@@ -35,3 +35,13 @@ def test_assert_amount_reports_diff():
 def test_assert_amount_rejects_float():
     with pytest.raises(TypeError):
         assert_amount(1.0, Decimal("1"), 2)
+
+
+def test_round_down_and_half_up():
+    from decimal import Decimal as D
+    from utils.money import round_down, round_half_up
+    assert round_down(D("9.87911"), 2) == D("9.87")
+    assert round_down(D("1876.0466"), 2) == D("1876.04")
+    assert round_down(D("-0.019"), 2) == D("-0.01")
+    assert round_half_up(D("0.0888"), 2) == D("0.09")
+    assert round_half_up(D("0.985"), 2) == D("0.99")

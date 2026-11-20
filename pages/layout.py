@@ -25,6 +25,7 @@ PROTECTED_ROUTES = [
 
 class AppLayout(BasePage):
     """登录后的公共布局：左侧菜单 + 右上角账户菜单。"""
+    ACCOUNT_DROPDOWN = ".el-dropdown-menu"
 
     SIDEBAR = "nav, aside, [class*=sidebar], [class*=menu]"
 
@@ -38,11 +39,11 @@ class AppLayout(BasePage):
 
     @property
     def account_menu(self) -> Locator:
-        return self.page.locator(".el-dropdown-menu:visible", has_text="Logout")
+        return self.page.locator(self.DROPDOWN_MENU, has_text="Logout")
 
     def logout(self) -> None:
         # 账户下拉的触发元素：通过菜单的 aria-labelledby 反查，页面上有两个 .account-wrap
-        trigger_id = self.page.locator(".el-dropdown-menu", has_text="Logout").first.get_attribute("aria-labelledby")
+        trigger_id = self.page.locator(self.ACCOUNT_DROPDOWN, has_text="Logout").first.get_attribute("aria-labelledby")
         self.page.locator(f"[id='{trigger_id}']").hover()
         self.account_menu.get_by_text("Logout", exact=True).click()
 

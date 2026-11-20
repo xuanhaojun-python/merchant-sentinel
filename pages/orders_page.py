@@ -3,6 +3,8 @@ from pages.transaction_page import TransactionPage
 
 
 class OrdersPage(TransactionPage):
+    MENU_ITEM = "[role='menuitem']:visible"
+    DIALOG_CLOSE = ".el-dialog__headerbtn, [aria-label='Close'], [class*='close']"
     """订单列表（当前与 Transaction 共用 /transaction 页面，待确认独立入口）
 
     详情入口：每行 Action 列的「⋯」下拉菜单 → Detail，弹出详情 dialog。
@@ -16,10 +18,10 @@ class OrdersPage(TransactionPage):
 
     def open_first_order_detail(self) -> None:
         self.page.locator(self.TABLE_ROW).first.locator(self.ROW_ACTION).click()
-        self.page.locator("[role='menuitem']:visible", has_text="Detail").first.click()
+        self.page.locator(self.MENU_ITEM, has_text="Detail").first.click()
 
     def detail_field(self, label: str) -> Locator:
         return self.detail_dialog.get_by_text(label, exact=True).first
 
     def close_detail(self) -> None:
-        self.detail_dialog.locator(".el-dialog__headerbtn, [aria-label='Close'], [class*='close']").first.click()
+        self.detail_dialog.locator(self.DIALOG_CLOSE).first.click()
